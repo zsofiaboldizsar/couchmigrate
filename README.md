@@ -1,4 +1,4 @@
-# couchmigrate
+# couchupsert
 
 A tool to assist for inserting or updating CouchDB Design Documnents. It provides a command line and API interfaces as well in order to use it manually, or  automatically from your application or CI tools.
 
