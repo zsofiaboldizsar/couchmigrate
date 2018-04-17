@@ -1,28 +1,22 @@
 {
-  "name": "couchmigrate",
-  "version": "0.2.0",
-  "description": "CouchDB design document migration tool",
-  "repository": "https://github.com/glynnbird/couchmigrate.git",
+  "name": "save-couch-design-doc-upserter",
+  "version": "0.4.0",
+  "description": "CouchDB design document upserter tool extended by API",
+  "repository": "https://github.com/akos0215/couchmigrate.git",
   "keywords": [
     "CouchDB",
     "design document",
     "migration",
-    "command-line"
+    "command-line",
+    "api"
   ],
-  "nyc": {
-    "check-coverage": false,
-    "per-file": true,
-    "lines": 10,
-    "statements": 10,
-    "functions": 10,
-    "branches": 10,
-    "reporter": [
-      "html"
-    ],
-    
-    "cache": false
+  "scripts": {
+    "start": "node app.js",
+    "test": "mocha --ui bdd test/**/*.spec.js",
+    "coverage": "nyc npm test",
+    "clean": "rimraf node_modules .nyc_output coverage"
   },
-  "author": "Glynn Bird",
+  "author": "Akos Balasko",
   "license": "Apache-2.0",
   "dependencies": {
     "async": "^2.5.0",
