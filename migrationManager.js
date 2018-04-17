@@ -300,10 +300,13 @@ function createDBClient(dbUrl,dbName){
     });
   
   };
-     
 
 module.exports.doMigration = function(dbSettings, rootCallBack){
-    nano = createDBClient(`https://${dbSettings.dbUsername}:${dbSettings.dbPassword}@${dbSettings.dbUsername}.${dbSettings.dbHost}`,dbSettings.dbName);
+    if (dbSettings.dbURL)
+      nano = createDBClient(dbSettings.dbURL,dbSettings.dbName);
+    else
+      nano = createDBClient(`https://${dbSettings.dbUsername}:${dbSettings.dbPassword}@${dbSettings.dbUsername}.${dbSettings.dbHost}`,dbSettings.dbName);
+    
     db = nano.db.use(dbSettings.dbName);
     migrate(null, dbSettings.dbName, JSON.stringify(dbSettings.designDoc), rootCallBack);
   }
