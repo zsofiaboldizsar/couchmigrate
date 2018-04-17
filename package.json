@@ -1,5 +1,5 @@
 {
-  "name": "save-couch-design-doc-upserter",
+  "name": "safe-couch-design-doc-upserter",
   "version": "0.4.0",
   "description": "CouchDB design document upserter tool extended by API",
   "repository": "https://github.com/akos0215/couchmigrate.git",
@@ -16,7 +16,8 @@
     "coverage": "nyc npm test",
     "clean": "rimraf node_modules .nyc_output coverage"
   },
-  "author": "Akos Balasko",
+  "author":"Glynn Bird",
+  "contributors": ["Akos Balasko"],
   "license": "Apache-2.0",
   "dependencies": {
     "async": "^2.5.0",
@@ -28,6 +29,6 @@
     "yargs": "^8.0.2"
   },
   "bin": {
-    "couchmigrate": "bin/couchmigrate.bin.js"
+    "couchupsert": "bin/couchupsert.bin.js"
   }
 }

@@ -1,10 +1,10 @@
 # couchmigrate
 
-A command-line tool to assist with the migration of CouchDB Design Documnents
+A tool to assist for inserting or updating CouchDB Design Documnents. It provides a command line and API interfaces as well in order to use it manually, or  automatically from your application or CI tools.
 
 ## Installation
 
-    npm install -g couchmigrate
+    npm install -g safe-couch-design-doc-upserter
     
 ## Usage
 
@@ -48,9 +48,9 @@ or
 
     export COUCH_URL=https://myusername:mypassword@myhost.cloudant.com
 
-Then run `couchmigrate`:
+Then run `couchupsert`:
 
-    couchmigrate --dd dd.json --db mydatabase
+    couchupsert --dd dd.json --db mydatabase
 
 * dd - the path to the file containing the design documnet 
 * db - the name of the database
