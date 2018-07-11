@@ -1,3 +1,5 @@
+import { DBSettings } from "model/settings";
+
 var fs = require('fs'),
   async = require('async');
 
@@ -301,7 +303,7 @@ function createDBClient(dbUrl,dbName){
   
   };
 
-export function doMigration(dbSettings, rootCallBack){
+export function doMigration(dbSettings:DBSettings, rootCallBack: Function){
     if (dbSettings.dbURL)
       nano = createDBClient(dbSettings.dbURL,dbSettings.dbName);
     else
