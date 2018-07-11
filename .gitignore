@@ -3,3 +3,4 @@ node_modules/
 dd.js
 dd.json
 .vscode/
+.dist/

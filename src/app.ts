@@ -33,7 +33,7 @@ function rootCallBack(err,data){
 }
 
 function setUpAndCallMigration(err,data){
-  settings = {
+  const settings = {
     dbURL:process.env.COUCH_URL,
     dbName:argv.db,
     designDoc:JSON.parse(data)
