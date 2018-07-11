@@ -1,6 +1,6 @@
 {
   "name": "safe-couch-design-doc-upserter",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "CouchDB design document upserter tool extended by API",
   "repository": "https://github.com/akos0215/couchmigrate.git",
   "keywords": [
@@ -41,7 +41,8 @@
     "couchupsert": "bin/couchupsert.bin.js"
   },
   "files": [
-    "dist/"
+    "dist/",
+    "bin/"
   ],
   "directories": {
     "test": "test"
