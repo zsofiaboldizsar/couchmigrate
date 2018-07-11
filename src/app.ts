@@ -28,11 +28,11 @@ var nano = require('nano')( {
 });
 var db = nano.db.use(argv.db);
 
-function rootCallBack(err,data){
+function rootCallBack(err:string, data:any){
   console.log("rootCallback invoked.");
 }
 
-function setUpAndCallMigration(err,data){
+function setUpAndCallMigration(err:string, data:any){
   const settings = {
     dbURL:process.env.COUCH_URL,
     dbName:argv.db,

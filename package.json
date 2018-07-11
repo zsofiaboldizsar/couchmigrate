@@ -30,8 +30,10 @@
     "mocha": "^5.0.5",
     "nano": "^6.4.0",
     "nyc": "^11.6.0",
+    "promise": "^8.0.1",
     "rimraf": "^2.6.2",
     "sinon": "^4.5.0",
+    "winston": "3.0.0-rc6",
     "yargs": "^8.0.2"
   },
   "devDependencies": {

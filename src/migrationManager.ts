@@ -1,13 +1,13 @@
 import { DBSettings } from "model/settings";
+import { createLogger, format, transports, Logger } from 'winston';
+var async = require('async');
+var nano:any;
+var db:any;
 
-var fs = require('fs'),
-  async = require('async');
-
-var nano;
-var db;
+const logger = createLogger();
 
 
-function createDBClient(dbUrl,dbName){
+function createDBClient(dbUrl:string,dbName:string){
     return require('nano')( {
      url: dbUrl,
      db: dbName,
@@ -22,21 +22,20 @@ function createDBClient(dbUrl,dbName){
    }
    
 
-   var debug = function(err, data) {
-    console.log("  err = ", (err)?"true":"");
-    console.log("  data = ", JSON.stringify(data));
-    console.log("-------------------------------");
+   var debug = function(err:string, data:string) {
+    logger.log("  err = ", (err)?"true":"");
+    logger.log("  data = ", JSON.stringify(data));
   };
   
-  var copydoc = function(from_id, to_id, cb) {
-    var from_doc = null,
-      to_doc = null;
+  var copydoc = function(from_id:string, to_id:string, cb:Function) {
+    var from_doc:any = null,
+      to_doc:any = null;
     
     async.series([
       // fetch the document we are copying
-      function(callback) {
-        console.log("## copydoc - Fetching from", from_id);
-        db.get(from_id, function(err, data) {
+      function(callback:Function) {
+        logger.log("## copydoc - Fetching from", from_id);
+        db.get(from_id, function(err:string, data:any) {
           debug(err, data);
           if (!err) {
             from_doc = data;
@@ -46,9 +45,9 @@ function createDBClient(dbUrl,dbName){
       },
       
       // fetch the document we are copying to (if it is there)
-      function(callback) {
-        console.log("## copydoc - Fetching to", to_id);
-        db.get(to_id, function(err, data) {
+      function(callback:Function) {
+        logger.log("## copydoc - Fetching to", to_id);
+        db.get(to_id, function(err:string, data:any) {
           debug(err, data);
           if (!err) {
             to_doc = data;
@@ -58,16 +57,16 @@ function createDBClient(dbUrl,dbName){
       },
       
       // overwrite the destination
-      function(callback) {
-        console.log("## copydoc - Writing new to", to_id);
+      function(callback:Function) {
+        logger.log("## copydoc - Writing new to", to_id);
         from_doc._id = to_id;
         if (to_doc) {
           from_doc._rev = to_doc._rev;
         } else { 
           delete from_doc._rev;
         }
-        console.log("## copydoc - contents",from_doc);
-        db.insert(from_doc, function(err, data) {
+        logger.log("## copydoc - contents",from_doc);
+        db.insert(from_doc, function(err:string, data:any) {
           debug(err, data);
           callback(err, data);
         });
@@ -75,12 +74,12 @@ function createDBClient(dbUrl,dbName){
     ], cb);
   };
   
-  var writedoc = function(obj, docid, cb) {
-    var preexistingdoc = null;
+  var writedoc = function(obj:any, docid:string, cb:Function) {
+    var preexistingdoc:any = null;
     async.series([
-      function(callback) {
-        console.log("## writedoc - Looking for pre-existing", docid);
-        db.get(docid, function(err, data) {
+      function(callback:Function) {
+        logger.log("## writedoc - Looking for pre-existing", docid);
+        db.get(docid, function(err:string, data:any) {
           debug(err, data);
           if (!err) {
             preexistingdoc = data;
@@ -88,13 +87,13 @@ function createDBClient(dbUrl,dbName){
           callback(null, data);
         });
       },
-      function(callback) {
+      function(callback:Function) {
         obj._id = docid;
         if (preexistingdoc) {
           obj._rev = preexistingdoc._rev;
         }
-        console.log("## writedoc - Writing doc", obj);
-        db.insert(obj, function(err, data) {
+        logger.log("## writedoc - Writing doc", obj);
+        db.insert(obj, function(err:string, data:any) {
           debug(err, data);
           callback(err, data);
         });
@@ -102,16 +101,16 @@ function createDBClient(dbUrl,dbName){
     ], cb);
   };
   
-  var deletedoc = function(docid, cb) {
+  var deletedoc = function(docid:string, cb:Function) {
   
-    console.log("## deletedoc - Looking for docid", docid);
-    db.get(docid, function(err, data) {
+    logger.log("## deletedoc - Looking for docid", docid);
+    db.get(docid, function(err:string, data:any) {
       debug(err, data);
       if (err) {
         return cb(null, null);
       }
-      console.log("## deletedoc - Deleting ", docid, data._rev);
-      db.destroy( docid, data._rev, function(err, d) {
+      logger.log("## deletedoc - Deleting ", docid, data._rev);
+      db.destroy( docid, data._rev, function(err:string, d:any) {
         debug(err,d);
         cb(null, null);
       });
@@ -119,22 +118,22 @@ function createDBClient(dbUrl,dbName){
   
   };
   
-  var clone = function(x) {
+  var clone = function(x:any) {
     return JSON.parse(JSON.stringify(x));
   };
   
-  var migrate = function(err, dbName, data, rootCallBack) {
+  var migrate = function(err:any, dbName:string, data:any, rootCallBack:Function) {
     if(err) {
-      console.log("Cannot find file", dd_filename);
+      logger.log("Cannot find file", dd_filename);
       rootCallBack(err,data);
     }
     
     // this is the whole design document
-    var dd;
+    var dd:any;
     try {
       dd = JSON.parse(data);
     } catch(e) {
-      console.log("FAILED to parse file contents as JSON - cannot continue");
+      logger.log('error',"FAILED to parse file contents as JSON - cannot continue");
       rootCallBack(e,null);
     }
   
@@ -146,20 +145,19 @@ function createDBClient(dbUrl,dbName){
     
     async.series( [
       // check that the database exists
-      function(callback) {
-        console.log("## check db exists");
+      function(callback:Function) {
+        logger.log('log',"## check db exists");
         // if it doesn't we'll get an 'err' and the async process will stop
-        nano.db.get(dbName, function(err, data) {
+        nano.db.get(dbName, function(err:string, data:any) {
           debug(err,data);
           callback(err,data);
         });
       },
   
       // check that the existing view isn't the same as the incoming view
-      function(callback) {
-        db.get(dd_name, function(err, data) {
+      function(callback:Function) {
+        db.get(dd_name, function(err:string, data:any) {
           if(err) {
-            console.log("!!!");
             return callback(null, null);
           }
           var a = clone(data);
@@ -169,7 +167,7 @@ function createDBClient(dbUrl,dbName){
           delete b._rev;
           delete b._id;
           if(JSON.stringify(a) === JSON.stringify(b)) {
-            console.log("** The design document is the same, no need to migrate! **");
+            logger.log('log',"** The design document is the same, no need to migrate! **");
             callback(true,{reason:`** The design document is the same, no need to migrate! **`});
           } else {
             callback(null,null);
@@ -178,23 +176,23 @@ function createDBClient(dbUrl,dbName){
       },
          
       // copy original design document to _OLD
-      function(callback) {
-        console.log("## copy original design document to _OLD");
-        copydoc(dd_name, dd_old_name, function(err,data) {
+      function(callback:Function) {
+        logger.log('log',"## copy original design document to _OLD");
+        copydoc(dd_name, dd_old_name, function(err:string, data:any) {
           callback(null, null);
         });
       },
       
       // write new design document to _NEW
-      function(callback) {
-        console.log("## write new design document to _NEW");
+      function(callback:Function) {
+        logger.log('log',"## write new design document to _NEW");
         writedoc(dd, dd_new_name, callback);
       },
   
       // trigger a new index.build
-      function(callback) {
+      function(callback:Function) {
         var name = dd._id.replace(/_design\//, "");
-        var v;
+        var v:any;
         var isSearch = false;
         if (dd.views) {
           v = Object.keys(dd.views)[0];
@@ -202,23 +200,23 @@ function createDBClient(dbUrl,dbName){
           isSearch = true;
           v = Object.keys(dd.indexes)[0];
         } else {
-          console.log("## Design document has no views, no deed to trigger view build")
+          logger.log('log',"## Design document has no views, no deed to trigger view build")
           hasViews = false;
           return callback(null, null);
         }
   
-        console.log("## trigger a new '" + (isSearch ? 'search' : 'view') + "' index.build after 3 sec for", name, "/", v);
+        logger.log('log',"## trigger a new '" + (isSearch ? 'search' : 'view') + "' index.build after 3 sec for", name, "/", v);
   
         // wait 3 seconds before querying the view
         setTimeout(function() {
           if (isSearch) {
-            db.search(name, v, { q: "xyz" }, function(err, data) {
+            db.search(name, v, { q: "xyz" }, function(err:string, data:any) {
               debug(err, data);
               // on a long view-build this request will timeout and return an 'err', which we can ignore
               callback(null, null);
             });
           } else {
-            db.view(name, v, { limit: 1 }, function(err, data) {
+            db.view(name, v, { limit: 1 }, function(err:string, data:any) {
               debug(err, data);
               // on a long view-build this request will timeout and return an 'err', which we can ignore
               callback(null, null);
@@ -228,22 +226,22 @@ function createDBClient(dbUrl,dbName){
       },
   
       // wait for the view build to complete, by polling _active_tasks
-      function(callback) {
+      function(callback:Function) {
         // If design document has no views, no deed to wait for the view to be built
         if(!hasViews){
           return callback(null, null)
         }
   
-        console.log("## wait 10 sec for the view build to complete, by polling _active_tasks");
+        logger.log('log',"## wait 10 sec for the view build to complete, by polling _active_tasks");
         var changes_done = 0;
         var total_changes = 0;
         var numTasks = 1;
         async.doWhilst(
-        function(callback) {
+        function(callback:Function) {
           setTimeout(function() {
-            nano.request({ path: "_active_tasks" }, function(err, data) {
+            nano.request({ path: "_active_tasks" }, function(err:string, data:any) {
               debug(err, data);
-              console.log('rebuilding ' + dbName + ' - ' + dd_name + ', indexes left: ' + (total_changes - changes_done));
+              logger.log('log','rebuilding ' + dbName + ' - ' + dd_name + ', indexes left: ' + (total_changes - changes_done));
               changes_done = 0;
               total_changes = 0;
               numTasks = 0;
@@ -265,38 +263,38 @@ function createDBClient(dbUrl,dbName){
           }, 10000);
           },
           function() { return numTasks > 0 },
-          function(err) {
+          function(err:string) {
               callback(null, null)
           }
         );
       },
   
       // copy _NEW to live
-      function(callback) {
-        console.log("## copy _NEW to live", dd_new_name, dd_name);
-        copydoc(dd_new_name, dd_name, function(err, data) {
+      function(callback:Function) {
+        logger.log('log',"## copy _NEW to live", dd_new_name, dd_name);
+        copydoc(dd_new_name, dd_name, function(err:string, data:any) {
           debug(err,data);
           callback(err,data);
         });
       },
       
       // delete the _OLD view
-      function(callback) {
-        console.log("## delete the _OLD view", dd_old_name);
+      function(callback:Function) {
+        logger.log('log',"## delete the _OLD view", dd_old_name);
         deletedoc(dd_old_name, callback);
       },
       
       // delete the _NEW view
-      function(callback) {
-        console.log("## delete the _NEW view", dd_new_name);
+      function(callback:Function) {
+        logger.log('log',"## delete the _NEW view", dd_new_name);
         deletedoc(dd_new_name, callback);
       }
       
-    ], function(err, data) {
+    ], function(err:string, data:any) {
       if (err) {
-        console.log(err);
+        logger.log('log',err);
       }
-      console.log("FINISHED!!!");
+      logger.log('log',"finished!!!");
       rootCallBack && rootCallBack(err, data);
 
     });
@@ -313,10 +311,27 @@ export function doMigration(dbSettings:DBSettings, rootCallBack: Function){
     migrate(null, dbSettings.dbName, JSON.stringify(dbSettings.designDoc), rootCallBack);
   }
 
-  export function doDelete(dbSettings, rootCallBack){
+ export async function doMigrationAsync(dbSettings:DBSettings):Promise<any>{
+    return new Promise(function(resolve,reject){
+      doMigration(dbSettings,function(err:string,data:any){
+             if(err !== null) return reject(err);
+             resolve(data);
+         });
+    });
+}
+
+export function doDelete(dbSettings:DBSettings, rootCallBack:Function){
     nano = createDBClient(`https://${dbSettings.dbUsername}:${dbSettings.dbPassword}@${dbSettings.dbUsername}.${dbSettings.dbHost}`,dbSettings.dbName);
     db = nano.db.use(dbSettings.dbName);
   deletedoc(dbSettings.designDoc._id, rootCallBack);
 }
 
 
+export async function doDeleteAsync(dbSettings:DBSettings):Promise<any>{
+  return new Promise(function(resolve,reject){
+    doDelete(dbSettings,function(err:string,data:any){
+           if(err !== null) return reject(err);
+           resolve(data);
+       });
+  });
+}

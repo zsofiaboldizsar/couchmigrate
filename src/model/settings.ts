@@ -5,6 +5,6 @@ export interface DBSettings{
     dbUsername: string,
     dbPassword: string,
     dbHost: string,
-    designDoc:{}
+    designDoc:any
     
 }
