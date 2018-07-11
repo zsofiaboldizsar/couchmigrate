@@ -1,6 +1,6 @@
 {
   "name": "safe-couch-design-doc-upserter",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "CouchDB design document upserter tool extended by API",
   "repository": "https://github.com/akos0215/couchmigrate.git",
   "keywords": [
@@ -14,7 +14,7 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "node app.js",
-    "build": "tsc --project ./src/tsconfig.json",
+    "build": "tsc -d --project ./src/tsconfig.json",
     "test": "mocha --ui bdd test/**/*.spec.js",
     "coverage": "nyc npm test",
     "clean": "rimraf node_modules .nyc_output coverage"
