@@ -301,7 +301,7 @@ function createDBClient(dbUrl:string,dbName:string){
   
   };
 
-export function doMigration(dbSettings:DBSettings, rootCallBack: Function){
+export function doMigrate(dbSettings:DBSettings, rootCallBack: Function){
     if (dbSettings.dbURL)
       nano = createDBClient(dbSettings.dbURL,dbSettings.dbName);
     else
@@ -311,7 +311,7 @@ export function doMigration(dbSettings:DBSettings, rootCallBack: Function){
     migrate(null, dbSettings.dbName, JSON.stringify(dbSettings.designDoc), rootCallBack);
   }
 
- export async function doMigrationAsync(dbSettings:DBSettings):Promise<any>{
+ export async function doMigrateAsync(dbSettings:DBSettings):Promise<any>{
     return new Promise(function(resolve,reject){
       doMigration(dbSettings,function(err:string,data:any){
              if(err !== null) return reject(err);
