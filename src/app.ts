@@ -2,9 +2,9 @@ import * as fs from 'fs';
 import * as Nano from 'nano'
 import * as path from 'path';
 import * as Argv from 'yargs';
-// import {doMigration} from './migrationManager';
 
-var doMigration = require('./migrationManager').doMigration;
+import { doMigrate } from './migrationManager';
+import { DBSettings } from './model/settings';
 
 const argv: any = Argv
    .usage("CouchDB design document migration")
@@ -38,15 +38,19 @@ export const rootCallBack = (data:any) => {
   console.log("rootCallback invoked.");
 }
 
-export const setUpAndCallMigration = (data:any) => {
-  const settings = {
+export const setUpAndCallMigration = async (data:any) => {
+  const settings: DBSettings = {
     dbURL:process.env.COUCH_URL,
     dbName:argv.db,
-    designDoc:JSON.parse(data)
+    designDoc:JSON.parse(data),
+    dbHost: process.env.DBHOST,
+    dbPassword: process.env.DBPASSWORD,
+    dbUsername: process.env.DBUSERNAME,
   };
+
   console.log("setUpAndCallMigration called");
   console.dir(data);
-  doMigration(settings,rootCallBack);
+  await doMigrate(settings);
 }
 
 // load the design document
