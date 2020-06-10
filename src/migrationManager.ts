@@ -335,3 +335,11 @@ export async function doDeleteAsync(dbSettings:DBSettings):Promise<any>{
        });
   });
 }
+
+/* export const doDeleteAsync = async (dbSettings:DBSettings):Promise<any> => {
+  try {
+    await doDelete(dbSettings, null);
+  } catch(error) {
+    throw new Error(error.message);
+  }
+} */
