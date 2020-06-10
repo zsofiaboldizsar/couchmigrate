@@ -1,14 +1,20 @@
-var fs = require('fs'),
-  async = require('async'),
-  argv = require('yargs')
+import * as fs from 'fs';
+import * as Nano from 'nano'
+import * as path from 'path';
+import * as Argv from 'yargs';
+
+import { doMigrate } from './migrationManager';
+import { DBSettings } from './model/settings';
+
+const argv: any = Argv
    .usage("CouchDB design document migration")
    .usage('Usage: $0 --dd <design document filename> --db <name of database>')
    .demand(['dd','db'])
    .argv;
 
-var doMigration = require('./migrationManager').doMigration;
+
 // get COUCH_URL from the environment
-var COUCH_URL = null;
+let COUCH_URL = null;
 if (typeof process.env.COUCH_URL === 'undefined') {
   console.log("Please use environment variable COUCH_URL to indicate URL of your CouchDB/Cloudant");
   console.log("  e.g. export COUCH_URL=https://_username_:_password_@127.0.0.1:5984");
@@ -16,7 +22,7 @@ if (typeof process.env.COUCH_URL === 'undefined') {
 } else {
   COUCH_URL = process.env.COUCH_URL;
 }
-var nano = require('nano')( {
+const nano = Nano( {
   url: COUCH_URL,
   requestDefaults: {
     timeout: 10000,
@@ -26,34 +32,37 @@ var nano = require('nano')( {
     }
   }
 });
-var db = nano.db.use(argv.db);
+const db = nano.db.use(argv.db);
 
-function rootCallBack(err:string, data:any){
+export const rootCallBack = (data:any) => {
   console.log("rootCallback invoked.");
 }
 
-function setUpAndCallMigration(err:string, data:any){
-  const settings = {
+export const setUpAndCallMigration = async (data:any) => {
+  const settings: DBSettings = {
     dbURL:process.env.COUCH_URL,
     dbName:argv.db,
-    designDoc:JSON.parse(data)
-  }
+    designDoc:JSON.parse(data),
+    dbHost: process.env.DBHOST,
+    dbPassword: process.env.DBPASSWORD,
+    dbUsername: process.env.DBUSERNAME,
+  };
+
   console.log("setUpAndCallMigration called");
   console.dir(data);
-  doMigration(settings,rootCallBack);
+  await doMigrate(settings);
 }
 
 // load the design document
 
-var dd_filename = argv.dd;
+const dd_filename = argv.dd;
 if (/\.js$/.test(dd_filename)) {
   // use require to load js design doc
-  var path = require('path'),
-    dataAbs = path.join(process.cwd(), dd_filename.replace(/([^.]+)\.js$/, '$1'));
-
-    setUpAndCallMigration(null,JSON.stringify(require(dataAbs)));
+  const dataAbs = path.join(process.cwd(), dd_filename.replace(/([^.]+)\.js$/, '$1'));
+  setUpAndCallMigration(JSON.stringify(require(dataAbs)));
     
 } else {
   // read json
-  fs.readFile(dd_filename, {encoding: "utf8"}, setUpAndCallMigration);
+  const data = fs.readFileSync(dd_filename, 'utf8');
+  setUpAndCallMigration(data);
 }
