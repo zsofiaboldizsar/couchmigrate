@@ -198,7 +198,7 @@ export const doMigrationAsync = async (err:any, dbName:string, data:any) => {
       ? dbClient(dbSettings.dbURL,dbSettings.dbName)
       : dbClient(`https://${dbSettings.dbUsername}:${dbSettings.dbPassword}@${dbSettings.dbUsername}.${dbSettings.dbHost}`,dbSettings.dbName);
     
-    const db = nano.db.use(dbSettings.dbName);
+    // const db = nano.db.use(dbSettings.dbName);
     await doMigrationAsync(null, dbSettings.dbName, JSON.stringify(dbSettings.designDoc));
   }
 

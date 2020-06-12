@@ -1,5 +1,43 @@
 import * as Nano from 'nano'
 import { createLogger, format, transports, Logger } from 'winston';
+import { DBSettings } from 'model';
+
+export class CouchDbClient {
+    db: any;
+
+    constructor(dbSettings: DBSettings) {
+      const url = (dbSettings.dbURL) 
+      ? dbClient(dbSettings.dbURL,dbSettings.dbName)
+      : dbClient(`https://${dbSettings.dbUsername}:${dbSettings.dbPassword}@${dbSettings.dbUsername}.${dbSettings.dbHost}`,dbSettings.dbName);
+      
+        this.db = require('nano')({
+            url,
+            requestDefaults: {
+              timeout: 10000,
+              headers: {
+                "User-Agent": "couchmigrate",
+                "x-cloudant-io-priority": "low",
+              },
+            },
+          });
+    }
+    /**
+   * Copies a document in CouchDB
+   *
+   *
+   * @param user
+   * @param doc
+   */
+  async copydoc(from_id: string, to_id: string): Promise<any> {
+    const fromDoc = this.db.get(from_id);
+    let toDoc = this.db.get(to_id);
+    
+    fromDoc._id = toDoc._id;
+    toDoc = toDoc ? fromDoc._rev = toDoc._rev : delete fromDoc._rev;
+
+    this.db.insert(fromDoc);
+    }
+  }
 
 export const dbClient = (dbUrl: string, dbName: string) => {
   return require("nano")({
@@ -22,7 +60,7 @@ var debug = function(err:string, data:string) {
   logger.log("  data = ", JSON.stringify(data));
 };
 
-  var copydoc = function(from_id:string, to_id:string, cb:Function) {
+/*   var copydoc = function(from_id:string, to_id:string, cb:Function) {
     var from_doc:any = null,
       to_doc:any = null;
     
@@ -67,7 +105,7 @@ var debug = function(err:string, data:string) {
         });
       }
     ], cb);
-  };
+  }; */
   
   var writedoc = function(obj:any, docid:string, cb:Function) {
     var preexistingdoc:any = null;
