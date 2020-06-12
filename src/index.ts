@@ -1,2 +1,2 @@
-export * from './migrationManager'
-export * from './model/settings'
+export * from './DesignDocUpdater';
+export * from './model/settings';

@@ -1,68 +1,53 @@
 import * as fs from 'fs';
-import * as Nano from 'nano'
 import * as path from 'path';
 import * as Argv from 'yargs';
+import { DesignDocUpdater } from 'DesignDocUpdater';
 
-import { doMigrate } from './migrationManager';
 import { DBSettings } from './model/settings';
 
-const argv: any = Argv
-   .usage("CouchDB design document migration")
-   .usage('Usage: $0 --dd <design document filename> --db <name of database>')
-   .demand(['dd','db'])
-   .argv;
-
-
-// get COUCH_URL from the environment
-let COUCH_URL = null;
-if (typeof process.env.COUCH_URL === 'undefined') {
-  console.log("Please use environment variable COUCH_URL to indicate URL of your CouchDB/Cloudant");
-  console.log("  e.g. export COUCH_URL=https://_username_:_password_@127.0.0.1:5984");
-  process.exit(1);
-} else {
-  COUCH_URL = process.env.COUCH_URL;
-}
-const nano = Nano( {
-  url: COUCH_URL,
-  requestDefaults: {
-    timeout: 10000,
-    headers: {
-      'User-Agent': 'couchmigrate',
-      'x-cloudant-io-priority': 'low'
-    }
-  }
-});
-const db = nano.db.use(argv.db);
-
-export const rootCallBack = (data:any) => {
-  console.log("rootCallback invoked.");
-}
-
-export const setUpAndCallMigration = async (data:any) => {
+export const setUpAndCallMigration = async (dbName: string, docName: string, data: any): Promise<void> => {
   const settings: DBSettings = {
-    dbURL:process.env.COUCH_URL,
-    dbName:argv.db,
-    designDoc:JSON.parse(data),
+    dbURL: process.env.COUCH_URL,
+    dbName,
+    designDoc: JSON.parse(data),
     dbHost: process.env.DBHOST,
     dbPassword: process.env.DBPASSWORD,
     dbUsername: process.env.DBUSERNAME,
   };
+  const ddUpdater = new DesignDocUpdater(settings);
 
-  console.log("setUpAndCallMigration called");
-  console.dir(data);
-  await doMigrate(settings);
-}
+  return ddUpdater.updateDesignDocument(docName, data);
+};
 
-// load the design document
+(async () => {
 
-const dd_filename = argv.dd;
-if (/\.js$/.test(dd_filename)) {
-  // use require to load js design doc
-  const dataAbs = path.join(process.cwd(), dd_filename.replace(/([^.]+)\.js$/, '$1'));
-  setUpAndCallMigration(JSON.stringify(require(dataAbs)));
-    
-} else {
-  // read json
-  const data = fs.readFileSync(dd_filename, 'utf8');
-  setUpAndCallMigration(data);
-}
+  const argv: any = Argv
+  .usage('CouchDB design document migration')
+  .usage('Usage: $0 --dd <design document filename> --db <name of database>')
+  .demand(['dd', 'db'])
+  .argv;
+
+  // get COUCH_URL from the environment
+  let COUCH_URL = null;
+  if (typeof process.env.COUCH_URL === 'undefined') {
+  // tslint:disable-next-line: no-console
+  console.log('Please use environment variable COUCH_URL to indicate URL of your CouchDB/Cloudant');
+  // tslint:disable-next-line: no-console
+  console.log('  e.g. export COUCH_URL=https://_username_:_password_@127.0.0.1:5984');
+  process.exit(1);
+  } else COUCH_URL = process.env.COUCH_URL;
+
+  // load the design document
+
+  const ddFileName = argv.dd;
+  const dataAbs = (/\.js$/.test(ddFileName)) ?
+    path.join(process.cwd(), ddFileName.replace(/([^.]+)\.js$/, '$1')) :
+    ddFileName;
+
+  const data = fs.readFileSync(dataAbs, 'utf8');
+
+  return setUpAndCallMigration(argv.db, ddFileName, data);
+
+})().catch(e => {
+  // Deal with the fact the chain failed
+});
