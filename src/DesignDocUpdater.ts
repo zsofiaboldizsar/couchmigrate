@@ -32,7 +32,8 @@ export class DesignDocUpdater {
 
       await this.dbClient.copyDocument(newDesignDocName, docName);
       await this.dbClient.deleteDocument(newDesignDocName);
-      await this.dbClient.deleteDocument(bcpDesignDocName);
+
+      return this.dbClient.deleteDocument(bcpDesignDocName);
 
     }
 }

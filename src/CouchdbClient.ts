@@ -49,7 +49,8 @@ export class CouchDBClient {
       const doc = await this.db.get(docId);
 
       logger.log('## Delete Document - Deleting ', docId, doc._rev);
-      await this.db.destroy(docId, doc._rev);
+
+      return this.db.destroy(docId, doc._rev);
 
     } catch (error) {
         logger.error(`Error: ${error.message}`);

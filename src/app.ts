@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as Argv from 'yargs';
+import * as minimist from 'minimist';
 import { DesignDocUpdater } from 'DesignDocUpdater';
 
 import { DBSettings } from './model/settings';
@@ -20,13 +20,13 @@ export const setUpAndCallMigration = async (dbName: string, docName: string, dat
 };
 
 (async () => {
+  const argv = minimist(process.argv.slice(2));
 
-  const argv: any = Argv
-  .usage('CouchDB design document migration')
+/*  .usage('CouchDB design document migration')
   .usage('Usage: $0 --dd <design document filename> --db <name of database>')
   .demand(['dd', 'db'])
   .argv;
-
+*/
   // get COUCH_URL from the environment
   let COUCH_URL = null;
   if (typeof process.env.COUCH_URL === 'undefined') {
