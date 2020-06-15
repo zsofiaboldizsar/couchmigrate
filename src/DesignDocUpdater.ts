@@ -48,11 +48,26 @@ export class DesignDocUpdater {
         ? await this.dbClient.search(designDocName, v)
         : await this.dbClient.view(designDocName, v, { limit: 1 });
       
-
-      // TODO iteratively checking the index by send query/search requests
+      // wait for search_indexer tasks to appear in the task list
       await delay(10000);
-      await this.dbClient.request({path: '_active_tasks'});
-
+      
+      // TODO iteratively checking the index by send query/search requests
+      let numTasks = 0;
+      let changes_done = 0;
+      let total_changes = 0;
+      while (numTasks > 0) {
+        const tasks = await this.dbClient.request({path: '_active_tasks'});
+        for (const task in tasks) {
+          const database = tasks[task].database !== undefined ? tasks[task].database : undefined;
+          const databaseFromTask = database.substr(database.lastIndexOf("/") + 1, database.lastIndexOf(".") - database.lastIndexOf("/") - 1);
+          if ((tasks[task].type === "indexer" || tasks[task].type === "search_indexer") &&
+            tasks[task].design_document === newDesignDocName) {
+            numTasks++;
+            changes_done += tasks[task].changes_done;
+            total_changes += tasks[task].total_changes;
+        }
+      }
+      
       await this.dbClient.copyDocument(newDesignDocName, docName);
       await this.dbClient.deleteDocument(newDesignDocName);
       // why return not await?
