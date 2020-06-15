@@ -1,5 +1,6 @@
 
 import { createLogger, Logger } from 'winston';
+import { default as delay } from 'delay';
 
 import { DBSettings } from './model';
 import { CouchDBClient } from './CouchdbClient';
@@ -28,11 +29,33 @@ export class DesignDocUpdater {
       await this.dbClient.upsertDocument(docContent, newDesignDocName);
 
       // TODO await trigger index building
+      const designDocName = storedDoc._id.replace(/_design\//, '');
+      let v;
+      let hasViews = true;
+      let isSearch = false;
+      if (storedDoc.views) {
+        v = Object.keys(storedDoc.views)[0];
+      } else if (storedDoc.indexes){
+        isSearch = true;
+        v = Object.keys(storedDoc.indexes)[0];
+      } else {
+        this.logger.log('log', '** Design document has no views, no need to trigger view build **');
+        hasViews = false;
+      }
+      // Questions: is delay needed? what is this limit: 1, q: "xyz" ?
+      await delay(3000);
+      (isSearch)
+        ? await this.dbClient.search(designDocName, v)
+        : await this.dbClient.view(designDocName, v, { limit: 1 });
+      
+
       // TODO iteratively checking the index by send query/search requests
+      await delay(10000);
+      await this.dbClient.request({path: '_active_tasks'});
 
       await this.dbClient.copyDocument(newDesignDocName, docName);
       await this.dbClient.deleteDocument(newDesignDocName);
-
+      // why return not await?
       return this.dbClient.deleteDocument(bcpDesignDocName);
 
     }
