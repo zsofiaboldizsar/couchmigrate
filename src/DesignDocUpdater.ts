@@ -29,33 +29,28 @@ export class DesignDocUpdater {
       await this.dbClient.upsertDocument(docContent, newDesignDocName);
 
       // TODO await trigger index building
+      // is this needed?
       const designDocName = storedDoc._id.replace(/_design\//, '');
       let v;
-      let hasViews = true;
-      let isSearch = false;
+      await delay(3000);
       if (storedDoc.views) {
         v = Object.keys(storedDoc.views)[0];
+        await this.dbClient.view(designDocName, v, { limit: 1 });
       } else if (storedDoc.indexes){
-        isSearch = true;
         v = Object.keys(storedDoc.indexes)[0];
+        await this.dbClient.search(designDocName, v, {q: 'xyz'})
       } else {
         this.logger.log('log', '** Design document has no views, no need to trigger view build **');
-        hasViews = false;
+
+        return Promise.resolve();
       }
-      // Questions: is delay needed? what is this limit: 1, q: "xyz" ?
-      await delay(3000);
-      (isSearch)
-        ? await this.dbClient.search(designDocName, v)
-        : await this.dbClient.view(designDocName, v, { limit: 1 });
-      
-      // wait for search_indexer tasks to appear in the task list
-      await delay(10000);
       
       // TODO iteratively checking the index by send query/search requests
       let numTasks = 0;
       let changes_done = 0;
       let total_changes = 0;
-      while (numTasks > 0) {
+      do {
+        await delay(10000);
         const tasks = await this.dbClient.request({path: '_active_tasks'});
         for (const task in tasks) {
           const database = tasks[task].database !== undefined ? tasks[task].database : undefined;
@@ -66,11 +61,12 @@ export class DesignDocUpdater {
             changes_done += tasks[task].changes_done;
             total_changes += tasks[task].total_changes;
         }
-      }
+      } while (numTasks > 0);
+      
       
       await this.dbClient.copyDocument(newDesignDocName, docName);
       await this.dbClient.deleteDocument(newDesignDocName);
-      // why return not await?
+
       return this.dbClient.deleteDocument(bcpDesignDocName);
 
     }
