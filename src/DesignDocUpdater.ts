@@ -46,14 +46,16 @@ export class DesignDocUpdater {
       }
       
       // TODO iteratively checking the index by send query/search requests
-      let numTasks = 0;
+      let numTasks = 1;
       let changes_done = 0;
       let total_changes = 0;
       do {
         await delay(10000);
         const tasks = await this.dbClient.request({path: '_active_tasks'});
+        numTasks = 0;
         for (const task in tasks) {
           const database = tasks[task].database !== undefined ? tasks[task].database : undefined;
+          // is it needed?
           const databaseFromTask = database.substr(database.lastIndexOf("/") + 1, database.lastIndexOf(".") - database.lastIndexOf("/") - 1);
           if ((tasks[task].type === "indexer" || tasks[task].type === "search_indexer") &&
             tasks[task].design_document === newDesignDocName) {
