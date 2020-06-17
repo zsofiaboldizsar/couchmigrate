@@ -17,64 +17,8 @@ export class DesignDocUpdater {
     }
 
     async updateDesignDocument(docName: string, docContent: any): Promise<void> {
-      const storedDoc = await this.dbClient.fetchDocument(docName);
-      if (utils.areDocumentsEquals(storedDoc, docContent)) {
-        this.logger.log('log', '** The design document is the same, no need to migrate! **');
 
-        return Promise.resolve();
-      }
-      const bcpDesignDocName = `${docName}_OLD`;
-      const newDesignDocName = `${docName}_NEW`;
-      await this.dbClient.copyDocument(docName, bcpDesignDocName);
-      await this.dbClient.upsertDocument(docContent, newDesignDocName);
-
-      // TODO await trigger index building
-      // is this needed?
-      const designDocName = storedDoc._id.replace(/_design\//, '');
-      let v;
-      await delay(3000);
-      if (storedDoc.views) {
-        v = Object.keys(storedDoc.views)[0];
-        await this.dbClient.view(designDocName, v, { limit: 1 });
-      } else if (storedDoc.indexes){
-        v = Object.keys(storedDoc.indexes)[0];
-        await this.dbClient.search(designDocName, v, {q: 'xyz'})
-      } else {
-        this.logger.log('log', '** Design document has no views, no need to trigger view build **');
-
-        return Promise.resolve();
-      }
-      
-      // TODO iteratively checking the index by send query/search requests
-      let numTasks = 1;
-      let changes_done = 0;
-      let total_changes = 0;
-      do {
-        await delay(10000);
-        const tasks = await this.dbClient.request({path: '_active_tasks'});
-        numTasks = 0;
-        for (const task in tasks) {
-          const database = tasks[task].database !== undefined ? tasks[task].database : undefined;
-          // is it needed?
-          const databaseFromTask = database.substr(database.lastIndexOf("/") + 1, database.lastIndexOf(".") - database.lastIndexOf("/") - 1);
-          if ((tasks[task].type === "indexer" || tasks[task].type === "search_indexer") &&
-            tasks[task].design_document === newDesignDocName) {
-            numTasks++;
-            changes_done += tasks[task].changes_done;
-            total_changes += tasks[task].total_changes;
-        }
-      } while (numTasks > 0);
-      
-      
-      await this.dbClient.copyDocument(newDesignDocName, docName);
-      await this.dbClient.deleteDocument(newDesignDocName);
-
-      return this.dbClient.deleteDocument(bcpDesignDocName);
-
-    }
-}
-
-/* steps:
+      /* steps:
         1.: Check DB exists (is this still needed?)
         2. fetch document from DB
         2. compare document with that local
@@ -86,6 +30,63 @@ export class DesignDocUpdater {
         8. delete _old
         9 delete _new
       */
+
+      const storedDoc = await this.dbClient.fetchDocument(docName);
+      if (utils.areDocumentsEquals(storedDoc, docContent)) {
+        this.logger.log('log', '** The design document is the same, no need to migrate! **');
+
+        return Promise.resolve();
+      }
+
+      const bcpDesignDocName = `${docName}_OLD`;
+      const newDesignDocName = `${docName}_NEW`;
+      await this.dbClient.copyDocument(docName, bcpDesignDocName);
+      const newDesignDoc = await this.dbClient.upsertDocument(docContent, newDesignDocName);
+
+      // trigger index building
+      const designDocName = newDesignDoc._id.replace(/_design\//, '');
+      let v;
+      await delay(3000);
+      if (newDesignDoc.views) {
+        v = Object.keys(newDesignDoc.views)[0];
+        await this.dbClient.view(designDocName, v, { limit: 1 });
+      } else if (newDesignDoc.indexes){
+        v = Object.keys(newDesignDoc.indexes)[0];
+        await this.dbClient.search(designDocName, v, {q: 'xyz'})
+      } else {
+        this.logger.log('log', '** Design document has no views, no need to trigger view build **');
+
+        return Promise.resolve();
+      }
+      
+      // iteratively check the index by send query/search requests
+      let numTasks = 1;
+      let changes_done = 0;
+      let total_changes = 0;
+      do {
+        await delay(10000);
+        const tasks = await this.dbClient.request({path: '_active_tasks'});
+        numTasks = 0;
+        for (const task in tasks) {
+          //const database = tasks[task].database !== undefined ? tasks[task].database : undefined;
+          // const databaseFromTask = database.substr(database.lastIndexOf("/") + 1, database.lastIndexOf(".") - database.lastIndexOf("/") - 1);
+          if ((tasks[task].type === "indexer" || tasks[task].type === "search_indexer") &&
+            tasks[task].design_document === newDesignDocName) {
+            numTasks++;
+            changes_done += tasks[task].changes_done;
+            total_changes += tasks[task].total_changes;
+          }
+        }
+      } while (numTasks > 0);
+      
+      await this.dbClient.copyDocument(newDesignDocName, docName);
+      await this.dbClient.deleteDocument(newDesignDocName);
+
+      this.logger.log('log', '** Finished design doc updating **');
+      
+      return this.dbClient.deleteDocument(bcpDesignDocName);
+    }
+  }
 
 /*
 
